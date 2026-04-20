@@ -1,31 +1,29 @@
-// Runs in the Bubble editor page context.
-// Scans global variables for an object containing user_types and caches it
-// so the popup can retrieve it without needing a separate injection.
+// Runs in the content script context on Bubble editor pages.
+// Injects interceptor.js into the page context so it can patch fetch/XHR,
+// then listens for the relayed app data and caches it for the popup.
 
-(function () {
-  function findAppData() {
-    const keys = Object.keys(window)
-    for (const k of keys) {
-      try {
-        const val = window[k]
-        if (val && typeof val === "object" && val.user_types) {
-          return val
-        }
-      } catch (_) {
-        // skip non-accessible vars
-      }
-    }
-    return null
+let cachedAppData = null
+
+// Inject interceptor into the page's JS context
+const script = document.createElement("script")
+script.src = chrome.runtime.getURL("interceptor.js")
+document.documentElement.appendChild(script)
+script.remove()
+
+// Receive app data relayed from the interceptor
+window.addEventListener("message", (event) => {
+  if (event.source !== window) return
+  if (event.data?.type === "BUBBLE_APP_DATA" && event.data.payload?.user_types) {
+    cachedAppData = event.data.payload
   }
+})
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message.type !== "GET_APP_DATA") return
-
-    const data = findAppData()
-    if (data) {
-      sendResponse({ success: true, data })
-    } else {
-      sendResponse({ success: false })
-    }
-  })
-})()
+// Respond to popup requests
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type !== "GET_APP_DATA") return
+  if (cachedAppData) {
+    sendResponse({ success: true, data: cachedAppData })
+  } else {
+    sendResponse({ success: false })
+  }
+})

@@ -220,9 +220,9 @@ loadFromPageBtn.addEventListener("click", async () => {
       renderTypes(appData)
     } else {
       showError(
-        "Could not find app data on this tab. " +
-          "Make sure you are on a Bubble editor page (bubble.io/page?id=…) " +
-          "with the app fully loaded, or upload the JSON manually.",
+        "App data not captured yet. " +
+          "Make sure you are on a Bubble editor tab with the app fully loaded, " +
+          "then try again. If this keeps failing, upload the JSON manually.",
       )
     }
   } catch (err) {

@@ -21,7 +21,17 @@
         "*://*.bubble.io/page*"
       ],
       "js": ["content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["interceptor.js"],
+      "matches": [
+        "*://bubble.io/*",
+        "*://*.bubbleapps.io/*",
+        "*://*.bubble.io/*"
+      ]
     }
   ]
 }
