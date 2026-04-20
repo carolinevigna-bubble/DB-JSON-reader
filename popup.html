@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bubble Data Extractor</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Bubble Data Extractor</h1>
+      <span class="subtitle" id="app-name"></span>
+    </header>
+
+    <!-- ── Error banner ─────────────────────────────── -->
+    <div id="error-msg" class="hidden"></div>
+
+    <!-- ── Load view ────────────────────────────────── -->
+    <div id="load-section">
+      <button id="load-from-page">
+        ⚡ Load from Editor (active tab)
+      </button>
+      <p class="hint">
+        Must be on a Bubble editor tab (bubble.io/page?id=…)
+      </p>
+
+      <div class="divider">or upload app JSON</div>
+
+      <div id="drop-zone">
+        <input type="file" id="file-input" accept=".json" />
+        <label for="file-input">
+          Drop <span>app.json</span> here, or <span>click to browse</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ── Types list view ──────────────────────────── -->
+    <div id="types-view" class="hidden">
+      <div class="view-header">
+        <span>Data Types</span>
+        <span class="count-badge" id="types-count"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="types-table">
+          <thead>
+            <tr>
+              <th>Display Name</th>
+              <th>Postgres Table</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="types-tbody"></tbody>
+        </table>
+        <div id="types-empty" class="empty-state hidden">
+          No data types found in user_types
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Fields detail view ───────────────────────── -->
+    <div id="fields-view" class="hidden">
+      <div class="view-header">
+        <button class="back-btn" id="back-btn">← Back</button>
+        <span id="type-display-name"></span>
+        <span class="type-tag" id="type-postgres-name"></span>
+        <span class="count-badge" id="fields-count"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="fields-table">
+          <thead>
+            <tr>
+              <th>Display Name</th>
+              <th>Column Key</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody id="fields-tbody"></tbody>
+        </table>
+        <div id="fields-empty" class="empty-state hidden">
+          No fields defined on this type
+        </div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
