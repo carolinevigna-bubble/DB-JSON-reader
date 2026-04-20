@@ -153,7 +153,7 @@ function parseJson(text) {
   try {
     return JSON.parse(text)
   } catch (_) {
-    showError("Could not parse JSON — make sure the file is valid JSON.")
+    showError("Could not parse file — make sure it is a valid .bubble or .json file.")
     return null
   }
 }
