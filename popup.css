@@ -9,8 +9,9 @@ body {
   font-size: 13px;
   color: #1a1a2e;
   background: #f8f9fc;
-  width: 640px;
-  min-height: 200px;
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 100vh;
 }
 
 header {
@@ -119,11 +120,38 @@ header .subtitle {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   padding: 10px 16px;
   background: #fff;
   border-bottom: 1px solid #e8eaf0;
   font-weight: 600;
   font-size: 13px;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.export-btn {
+  background: #fff;
+  border: 1px solid #c8cfe8;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #1a1a2e;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.export-btn:hover {
+  background: #eef1fd;
+  border-color: #4361ee;
+  color: #4361ee;
 }
 
 .view-header .back-btn {
@@ -155,17 +183,20 @@ header .subtitle {
 }
 
 .count-badge {
-  margin-left: auto;
   font-size: 11px;
   font-weight: 400;
   color: #889;
+}
+
+.count-badge--trailing {
+  margin-left: auto;
 }
 
 /* ── Tables ───────────────────────────────────────────── */
 
 .table-wrap {
   overflow-y: auto;
-  max-height: 420px;
+  max-height: min(70vh, 720px);
 }
 
 table {

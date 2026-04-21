@@ -3,15 +3,17 @@
   "name": "Bubble Data Extractor",
   "version": "1.0.0",
   "description": "View Bubble app data types and fields with their underlying database key names",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "host_permissions": [
     "*://bubble.io/*",
     "*://*.bubbleapps.io/*",
     "*://*.bubble.io/*"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Bubble Data Extractor"
+    "default_title": "Bubble Data Extractor — open viewer"
   },
   "content_scripts": [
     {

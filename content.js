@@ -1,6 +1,6 @@
 // Runs in the content script context on Bubble editor pages.
 // Injects interceptor.js into the page context so it can patch fetch/XHR,
-// then listens for the relayed app data and caches it for the popup.
+// then listens for the relayed app data and caches it for the extension viewer tab.
 
 let cachedAppData = null
 

@@ -20,9 +20,18 @@ const fieldsCount = document.getElementById("fields-count")
 const fieldsTbody = document.getElementById("fields-tbody")
 const fieldsEmpty = document.getElementById("fields-empty")
 
+const exportTypesCsvBtn = document.getElementById("export-types-csv")
+const exportAllCsvBtn = document.getElementById("export-all-csv")
+const exportFieldsCsvBtn = document.getElementById("export-fields-csv")
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let currentView = "load"
+/** @type {object | null} */
+let lastJson = null
+let currentTypeKey = null
+/** @type {object | null} */
+let currentTypeData = null
 
 // ── View management ───────────────────────────────────────────────────────────
 
@@ -57,11 +66,13 @@ function renderTypes(json) {
 
   const userTypes = json.user_types
   if (!userTypes || typeof userTypes !== "object") {
+    lastJson = null
     showError("No user_types section found in this JSON.")
     return
   }
 
   const entries = Object.entries(userTypes)
+  lastJson = json
 
   // Show app name if present
   if (json.name) {
@@ -108,6 +119,8 @@ function renderTypes(json) {
 
 function renderFields(typeKey, typeData) {
   clearError()
+  currentTypeKey = typeKey
+  currentTypeData = typeData
 
   const tableName = postgresTableName(typeKey)
   typeDisplayName.textContent = typeData.display || typeKey
@@ -195,25 +208,36 @@ function readFile(file) {
 
 // ── Load from active editor tab ───────────────────────────────────────────────
 
+function getEditorTabIdFromUrl() {
+  const raw = new URLSearchParams(window.location.search).get("editorTab")
+  if (raw == null || raw === "") return null
+  const n = parseInt(raw, 10)
+  return Number.isFinite(n) ? n : null
+}
+
 loadFromPageBtn.addEventListener("click", async () => {
   clearError()
   loadFromPageBtn.disabled = true
   loadFromPageBtn.textContent = "Loading…"
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    let tabId = getEditorTabIdFromUrl()
+    if (tabId == null) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      tabId = tab?.id ?? null
+    }
 
-    if (!tab) {
-      showError("No active tab found.")
+    if (tabId == null) {
+      showError("No tab found to read from.")
       return
     }
 
     // First try messaging the content script (already injected on bubble pages)
-    let appData = await tryContentScript(tab.id)
+    let appData = await tryContentScript(tabId)
 
     // Fallback: inject a one-shot script into the page context
     if (!appData) {
-      appData = await tryInjectedScript(tab.id)
+      appData = await tryInjectedScript(tabId)
     }
 
     if (appData) {
@@ -291,6 +315,149 @@ function escHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
 }
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+
+function csvEscape(value) {
+  const s = String(value ?? "")
+  if (/[",\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`
+  }
+  return s
+}
+
+function toCsvLines(rows) {
+  return rows.map((cells) => cells.map(csvEscape).join(","))
+}
+
+function downloadCsv(filename, rows) {
+  const text = "\ufeff" + toCsvLines(rows).join("\r\n")
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" })
+  const a = document.createElement("a")
+  const url = URL.createObjectURL(blob)
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function sortedTypeEntries(userTypes) {
+  return Object.entries(userTypes || {}).sort(([, a], [, b]) => {
+    const nameA = (a.display || "").toLowerCase()
+    const nameB = (b.display || "").toLowerCase()
+    return nameA.localeCompare(nameB)
+  })
+}
+
+function sortedFieldEntries(fields) {
+  return Object.entries(fields || {}).sort(([, a], [, b]) => {
+    const nameA = (a.display || "").toLowerCase()
+    const nameB = (b.display || "").toLowerCase()
+    return nameA.localeCompare(nameB)
+  })
+}
+
+function exportTypesCsv() {
+  if (!lastJson?.user_types) {
+    showError("Load app data before exporting.")
+    return
+  }
+  clearError()
+  const rows = [["Display Name", "Postgres Table", "Type Key"]]
+  for (const [key, typeData] of sortedTypeEntries(lastJson.user_types)) {
+    rows.push([typeData.display || key, postgresTableName(key), key])
+  }
+  downloadCsv(slugifyFilename(lastJson.name, "bubble-types") + ".csv", rows)
+}
+
+function exportAllFieldsCsv() {
+  if (!lastJson?.user_types) {
+    showError("Load app data before exporting.")
+    return
+  }
+  clearError()
+  const rows = [
+    [
+      "Type Display Name",
+      "Postgres Table",
+      "Type Key",
+      "Field Display Name",
+      "Field Key",
+      "Field Type",
+    ],
+  ]
+  for (const [typeKey, typeData] of sortedTypeEntries(lastJson.user_types)) {
+    const typeDisplay = typeData.display || typeKey
+    const table = postgresTableName(typeKey)
+    const fieldEntries = sortedFieldEntries(typeData.fields)
+    if (fieldEntries.length === 0) {
+      rows.push([typeDisplay, table, typeKey, "", "", ""])
+    } else {
+      for (const [fieldKey, fieldData] of fieldEntries) {
+        rows.push([
+          typeDisplay,
+          table,
+          typeKey,
+          fieldData.display || fieldKey,
+          fieldKey,
+          fieldData.value || "",
+        ])
+      }
+    }
+  }
+  downloadCsv(slugifyFilename(lastJson.name, "bubble-all-fields") + ".csv", rows)
+}
+
+function exportCurrentFieldsCsv() {
+  if (!lastJson || currentTypeKey == null || !currentTypeData) {
+    showError("Open a data type before exporting fields.")
+    return
+  }
+  clearError()
+  const typeDisplay = currentTypeData.display || currentTypeKey
+  const table = postgresTableName(currentTypeKey)
+  const rows = [
+    [
+      "Type Display Name",
+      "Postgres Table",
+      "Type Key",
+      "Field Display Name",
+      "Field Key",
+      "Field Type",
+    ],
+  ]
+  const fieldEntries = sortedFieldEntries(currentTypeData.fields)
+  if (fieldEntries.length === 0) {
+    rows.push([typeDisplay, table, currentTypeKey, "", "", ""])
+  } else {
+    for (const [fieldKey, fieldData] of fieldEntries) {
+      rows.push([
+        typeDisplay,
+        table,
+        currentTypeKey,
+        fieldData.display || fieldKey,
+        fieldKey,
+        fieldData.value || "",
+      ])
+    }
+  }
+  const typeSlug = slugifyFilename(typeDisplay, "type")
+  downloadCsv(slugifyFilename(lastJson.name, "bubble-fields") + "-" + typeSlug + ".csv", rows)
+}
+
+function slugifyFilename(appName, fallback) {
+  const base = (appName || fallback).toString().trim().toLowerCase()
+  const slug = base
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+  return slug || fallback
+}
+
+exportTypesCsvBtn.addEventListener("click", exportTypesCsv)
+exportAllCsvBtn.addEventListener("click", exportAllFieldsCsv)
+exportFieldsCsvBtn.addEventListener("click", exportCurrentFieldsCsv)
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 

@@ -21,7 +21,9 @@
         ⚡ Load from Editor (active tab)
       </button>
       <p class="hint">
-        Must be on a Bubble editor tab (bubble.io/page?id=…)
+        If you opened this page by clicking the extension on a Bubble editor tab,
+        that tab is used. Otherwise the current tab in this window is used
+        (bubble.io/page?id=…).
       </p>
 
       <div class="divider">or upload app JSON</div>
@@ -39,6 +41,14 @@
       <div class="view-header">
         <span>Data Types</span>
         <span class="count-badge" id="types-count"></span>
+        <div class="header-actions">
+          <button type="button" class="export-btn" id="export-types-csv">
+            Export types CSV
+          </button>
+          <button type="button" class="export-btn" id="export-all-csv">
+            Export all fields CSV
+          </button>
+        </div>
       </div>
       <div class="table-wrap">
         <table id="types-table">
@@ -63,7 +73,12 @@
         <button class="back-btn" id="back-btn">← Back</button>
         <span id="type-display-name"></span>
         <span class="type-tag" id="type-postgres-name"></span>
-        <span class="count-badge" id="fields-count"></span>
+        <span class="count-badge count-badge--trailing" id="fields-count"></span>
+        <div class="header-actions">
+          <button type="button" class="export-btn" id="export-fields-csv">
+            Export fields CSV
+          </button>
+        </div>
       </div>
       <div class="table-wrap">
         <table id="fields-table">
